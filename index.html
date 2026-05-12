@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" class="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,62 +10,92 @@
         tailwind.config = { darkMode: 'class' };
     </script>
     <link rel="stylesheet" href="style.css">
-    
-    <!-- Dependencias Clásicas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
-    <!-- jsPDF para Reportes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans min-h-screen flex flex-col items-center p-6 transition-colors duration-300">
 
-    <div class="max-w-5xl w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden mt-8 transition-colors duration-300">
-        <!-- Header -->
+<body
+    class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans min-h-screen flex flex-col items-center p-6 transition-colors duration-300">
+
+    <div
+        class="max-w-5xl w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden mt-8 transition-colors duration-300">
         <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 text-center text-white relative">
-            <button id="darkModeBtn" class="absolute top-4 right-4 p-2 rounded-full hover:bg-white/20 transition-colors">
-                <svg class="w-6 h-6 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <button id="darkModeBtn"
+                class="absolute top-4 right-4 p-2 rounded-full hover:bg-white/20 transition-colors">
+                <svg class="w-6 h-6 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                    </path>
+                </svg>
+                <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
+                    </path>
+                </svg>
             </button>
             <h1 class="text-3xl font-bold mb-2">Rockstar CV Matcher (AI Edition)</h1>
             <p class="text-blue-100">Inteligencia Artificial semántica directa en tu navegador.</p>
         </div>
 
-        <!-- Indicador Estado IA -->
-        <div id="modelLoadingInfo" class="bg-indigo-600 text-white px-6 py-5 flex flex-col items-center justify-center space-y-2 transition-all duration-500">
+        <div id="modelLoadingInfo"
+            class="bg-indigo-600 text-white px-6 py-5 flex flex-col items-center justify-center space-y-2 transition-all duration-500">
             <div class="flex items-center gap-3">
-                <svg id="loadingSpinnerAI" class="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <span id="loadingStatusText" class="font-bold text-lg">Iniciando Motor de Inteligencia Artificial...</span>
+                <svg id="loadingSpinnerAI" class="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg"
+                    fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
+                <span id="loadingStatusText" class="font-bold text-lg">Iniciando Motor de Inteligencia
+                    Artificial...</span>
             </div>
-            <p id="loadingSubText" class="text-indigo-200 text-sm">La primera vez puede tardar unos segundos (se descargarán ~40MB en la caché de tu navegador). Luego será instantáneo.</p>
+            <p id="loadingSubText" class="text-indigo-200 text-sm">La primera vez puede tardar unos segundos (se
+                descargarán ~40MB en la caché de tu navegador). Luego será instantáneo.</p>
             <div class="w-full max-w-md bg-indigo-900 rounded-full h-2.5 mt-3 hidden" id="progressContainer">
-              <div id="progressBar" class="bg-green-400 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                <div id="progressBar" class="bg-green-400 h-2.5 rounded-full transition-all duration-300"
+                    style="width: 0%"></div>
             </div>
         </div>
 
-        <!-- Alerta ATS -->
-        <div id="atsWarningBox" class="hidden bg-yellow-50 dark:bg-yellow-900/30 border-b border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 px-6 py-3 text-sm flex items-center justify-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            <span><strong>Aviso ATS:</strong> Hemos detectado párrafos muy densos (más de 100 palabras) en tu CV. Los sistemas automáticos (y humanos) prefieren listas cortas y viñetas.</span>
+        <div id="atsWarningBox"
+            class="hidden bg-yellow-50 dark:bg-yellow-900/30 border-b border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 px-6 py-3 text-sm flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                </path>
+            </svg>
+            <span><strong>Aviso ATS:</strong> Hemos detectado párrafos muy densos (más de 100 palabras) en tu CV. Los
+                sistemas automáticos (y humanos) prefieren listas cortas y viñetas.</span>
         </div>
 
         <div class="p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Columna Input -->
             <div class="space-y-6">
-                
+
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">1. Oferta de Empleo</label>
-                    <textarea id="jobDescription" rows="6" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow resize-none" placeholder="Pega aquí la descripción completa del puesto..."></textarea>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">1. Oferta de
+                        Empleo</label>
+                    <textarea id="jobDescription" rows="6"
+                        class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow resize-none"
+                        placeholder="Pega aquí la descripción completa del puesto..."></textarea>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">2. Tu CV (PDF)</label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">2. Tu CV
+                        (PDF)</label>
                     <div class="relative flex items-center justify-center w-full">
-                        <label for="cvUpload" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <label for="cvUpload"
+                            class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                             <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                <svg class="w-8 h-8 mb-3 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                                <svg class="w-8 h-8 mb-3 text-gray-500 dark:text-gray-400" aria-hidden="true"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2" />
                                 </svg>
-                                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">Sube o arrastra</span> tu PDF</p>
+                                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span
+                                        class="font-semibold">Sube o arrastra</span> tu PDF</p>
                             </div>
                             <input id="cvUpload" type="file" accept="application/pdf" class="hidden" />
                         </label>
@@ -72,28 +103,44 @@
                     <p id="fileName" class="text-sm text-green-600 dark:text-green-400 mt-2 hidden font-medium"></p>
                 </div>
 
-                <button id="analyzeBtn" disabled class="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md flex justify-center items-center gap-2">
+                <button id="analyzeBtn" disabled
+                    class="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md flex justify-center items-center gap-2">
                     <span>Analizar con Inteligencia Artificial</span>
-                    <svg id="loadingSpinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg id="loadingSpinner" class="animate-spin h-5 w-5 text-white hidden"
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
                     </svg>
                 </button>
-                
-                <div class="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-4 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-100 dark:border-green-800">
-                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                    <span><strong>Zero-Server Privacy:</strong> Todos los modelos NLP se ejecutan localmente. Tus datos no abandonan este navegador.</span>
+
+                <div
+                    class="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-4 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-100 dark:border-green-800">
+                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    <span><strong>Zero-Server Privacy:</strong> Todos los modelos NLP se ejecutan localmente. Tus datos
+                        no abandonan este navegador.</span>
                 </div>
             </div>
 
-            <!-- Columna Resultados -->
-            <div id="resultsSection" class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 flex flex-col items-center hidden opacity-0 transition-opacity duration-500 relative">
+            <div id="resultsSection"
+                class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 flex flex-col items-center hidden opacity-0 transition-opacity duration-500 relative">
                 <div class="text-center mb-6 w-full">
                     <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">Match Semántico</h2>
                     <div class="relative w-32 h-32 mx-auto">
                         <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                            <path class="text-gray-200 dark:text-gray-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor" stroke-width="3" fill="none" />
-                            <path id="scoreCircle" class="text-blue-600 transition-all duration-1000 ease-out" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor" stroke-width="3" fill="none" />
+                            <path class="text-gray-200 dark:text-gray-700" stroke-dasharray="100, 100"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                stroke="currentColor" stroke-width="3" fill="none" />
+                            <path id="scoreCircle" class="text-blue-600 transition-all duration-1000 ease-out"
+                                stroke-dasharray="0, 100"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                stroke="currentColor" stroke-width="3" fill="none" />
                         </svg>
                         <div class="absolute inset-0 flex items-center justify-center">
                             <span id="scoreText" class="text-3xl font-bold text-gray-800 dark:text-white">0%</span>
@@ -103,39 +150,62 @@
 
                 <div class="w-full space-y-6">
                     <div>
-                        <h3 class="text-sm font-semibold text-green-700 dark:text-green-400 flex items-center gap-1 border-b dark:border-gray-600 pb-1 mb-3">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <h3
+                            class="text-sm font-semibold text-green-700 dark:text-green-400 flex items-center gap-1 border-b dark:border-gray-600 pb-1 mb-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
                             Keywords Validadas
                         </h3>
                         <div id="foundKeywords" class="flex flex-wrap gap-2"></div>
                     </div>
-                    
+
                     <div>
-                        <h3 class="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-1 border-b dark:border-gray-600 pb-1 mb-3">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <h3
+                            class="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-1 border-b dark:border-gray-600 pb-1 mb-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
                             Keywords a Mejorar (Pasa el ratón para sugerencias IA)
                         </h3>
                         <div id="missingKeywords" class="flex flex-wrap gap-2"></div>
                     </div>
                 </div>
 
-                <button id="exportPdfBtn" class="mt-6 w-full bg-gray-800 dark:bg-gray-700 hover:bg-gray-900 dark:hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded transition-colors text-sm flex justify-center items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <button id="exportPdfBtn"
+                    class="mt-6 w-full bg-gray-800 dark:bg-gray-700 hover:bg-gray-900 dark:hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded transition-colors text-sm flex justify-center items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
+                    </svg>
                     Exportar Reporte de Optimización PDF
                 </button>
             </div>
-            
-            <div id="emptyState" class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 flex flex-col justify-center items-center text-center">
-                <svg class="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                <p class="text-gray-500 dark:text-gray-400 font-medium">Sube tu CV e ingresa la oferta para activar la IA.</p>
+
+            <div id="emptyState"
+                class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 flex flex-col justify-center items-center text-center">
+                <svg class="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                <p class="text-gray-500 dark:text-gray-400 font-medium">Sube tu CV e ingresa la oferta para activar la
+                    IA.</p>
             </div>
         </div>
     </div>
 
     <footer class="mt-8 mb-6 text-center text-sm text-gray-500 dark:text-gray-400 max-w-3xl px-4">
-        <p><strong>🖥️ Recomendación de compatibilidad:</strong> Para un rendimiento óptimo de la IA local, recomendamos utilizar navegadores basados en Chromium (<strong>Google Chrome, Microsoft Edge o Brave</strong>). Debido al soporte de WebAssembly acelerado, la ejecución en Firefox podría ser ligeramente más lenta.</p>
+        <p><strong> Recomendación de compatibilidad:</strong> Para un rendimiento óptimo de la IA local, recomendamos
+            utilizar navegadores basados en Chromium (<strong>Google Chrome, Microsoft Edge o Brave</strong>). Debido al
+            soporte de WebAssembly acelerado, la ejecución en Firefox podría ser ligeramente más lenta.</p>
     </footer>
 
     <script src="app.js"></script>
 </body>
+
 </html>

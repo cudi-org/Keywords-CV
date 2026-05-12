@@ -1,12 +1,10 @@
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js';
 
-// FASE 5: Cache local habilitada por defecto en transformers.js (Usa IndexedDB)
-env.allowLocalModels = false; // Usamos Hugging Face Hub
+env.allowLocalModels = false;
 
 let extractor = null;
 let generator = null;
 
-// FASE 5: Cálculo de Similitud de Coseno
 function cosineSimilarity(vecA, vecB) {
     let dotProduct = 0, normA = 0, normB = 0;
     for (let i = 0; i < vecA.length; i++) {
@@ -22,20 +20,17 @@ self.onmessage = async (event) => {
 
     try {
         if (action === 'init') {
-            // Cargar Modelo de Embeddings (all-MiniLM-L6-v2)
             extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
                 progress_callback: x => self.postMessage({ type: 'progress', data: x })
             });
-            // Cargar Modelo pequeño de generación de texto (Flan-T5-small) - FASE 7
             generator = await pipeline('text2text-generation', 'Xenova/flan-t5-small', {
                 progress_callback: x => self.postMessage({ type: 'progress', data: x })
             });
             self.postMessage({ type: 'ready' });
-        } 
+        }
         else if (action === 'analyze_semantics') {
             const { keywords, cvParagraphs } = payload;
-            
-            // Vectorizar todos los párrafos del CV
+
             const cvEmbeddings = [];
             for (const p of cvParagraphs) {
                 if (p.trim().length === 0) continue;
@@ -47,11 +42,10 @@ self.onmessage = async (event) => {
             for (const kw of keywords) {
                 const kwOutput = await extractor(kw.replace(/_/g, ' '), { pooling: 'mean', normalize: true });
                 const kwVector = kwOutput.data;
-                
+
                 let bestScore = -1;
                 let bestMatch = null;
-                
-                // Comparar distancia vectorial
+
                 for (const cv of cvEmbeddings) {
                     const score = cosineSimilarity(kwVector, cv.vector);
                     if (score > bestScore) {
@@ -59,14 +53,12 @@ self.onmessage = async (event) => {
                         bestMatch = cv.text;
                     }
                 }
-                
-                // Threshold semántico: 0.45 en all-MiniLM es una coincidencia razonable
+
                 results[kw] = { score: bestScore, bestParagraph: bestMatch, isSemanticMatch: bestScore > 0.45 };
             }
-            
-            // FASE 8: Liberación de memoria explícita de estructuras temporales pesadas
+
             cvEmbeddings.length = 0;
-            
+
             self.postMessage({ type: 'semantics_result', id, results });
         }
         else if (action === 'generate_suggestion') {

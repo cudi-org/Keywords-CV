@@ -1,4 +1,3 @@
-// FASE 6: Filtro de Ruido de RRHH ampliado
 const stopWords = new Set([
     "a", "ante", "bajo", "cabe", "con", "contra", "de", "desde", "durante", "en", "entre", "hacia", "hasta", "mediante", "para", "por", "según", "segun", "sin", "so", "sobre", "tras", "versus", "vía", "via",
     "el", "la", "los", "las", "un", "una", "unos", "unas", "al", "del", "lo", "y", "e", "o", "u", "ni", "que", "como", "mas", "pero", "sino", "porque", "aunque", "si",
@@ -11,9 +10,8 @@ const stopWords = new Set([
     "competitivo", "ganas", "aprender", "excelente", "ambiente", "crecimiento", "oportunidad", "unete", "únete", "estabilidad", "laboral"
 ]);
 
-// FASE 6: Detección de Bigramas/Trigramas (Conceptos Compuestos)
 const knownConcepts = [
-    "machine learning", "recursos humanos", "sql server", "amazon web services", 
+    "machine learning", "recursos humanos", "sql server", "amazon web services",
     "google cloud platform", "inteligencia artificial", "user experience", "user interface",
     "front end", "back end", "full stack", "data science", "data engineer", "deep learning",
     "react js", "node js", "vue js", "angular js", "power bi", "agile methodologies", "scrum master",
@@ -24,13 +22,11 @@ let techSynonyms = {};
 let aiReady = false;
 let currentAnalysis = { found: [], missing: [], score: 0 };
 
-// Cargar FASE 6: Diccionario de Sinónimos Técnico
 fetch('tech-synonyms.json')
     .then(res => res.json())
     .then(data => { techSynonyms = data; })
     .catch(err => console.error("Error loading synonyms", err));
 
-// Elementos DOM
 const darkModeBtn = document.getElementById('darkModeBtn');
 const htmlEl = document.documentElement;
 const jobDescriptionInput = document.getElementById('jobDescription');
@@ -50,16 +46,14 @@ const missingKeywordsDiv = document.getElementById('missingKeywords');
 
 let cvFile = null;
 
-// Configuración Worker PDF.js
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf-worker.js';
 
-// Inicializar FASE 5: Worker de Transformers.js
 const aiWorker = new Worker('ai-worker.js', { type: 'module' });
 
 aiWorker.onmessage = (e) => {
     const data = e.data;
     if (data.type === 'progress') {
-        if(data.data && data.data.status === 'progress') {
+        if (data.data && data.data.status === 'progress') {
             document.getElementById('progressContainer').classList.remove('hidden');
             const pct = Math.round(data.data.progress || 0);
             document.getElementById('loadingStatusText').textContent = `Descargando Modelos: ${data.data.file || ''} (${pct}%)`;
@@ -72,7 +66,7 @@ aiWorker.onmessage = (e) => {
         document.getElementById('loadingStatusText').textContent = '🧠 Modelos IA Semánticos Listos';
         document.getElementById('loadingSubText').textContent = 'Todo preparado para analizar tu CV en local.';
         document.getElementById('progressContainer').classList.add('hidden');
-        setTimeout(() => { 
+        setTimeout(() => {
             modelLoadingInfo.style.opacity = '0';
             setTimeout(() => modelLoadingInfo.classList.add('hidden'), 500);
         }, 3500);
@@ -80,15 +74,12 @@ aiWorker.onmessage = (e) => {
     }
 };
 
-// Arrancar IA (descargará a IndexedDB o cargará desde caché)
 aiWorker.postMessage({ action: 'init' });
 
-// Toggle FASE 8: Dark Mode
 darkModeBtn.addEventListener('click', () => {
     htmlEl.classList.toggle('dark');
 });
 
-// Manejo de la subida de archivo
 cvUploadInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file && file.type === 'application/pdf') {
@@ -101,26 +92,24 @@ cvUploadInput.addEventListener('change', (e) => {
     }
 });
 
-// Extracción PDF y FASE 7: Detección de Leibilidad ATS
 async function extractTextFromPDF(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = async function(event) {
+        reader.onload = async function (event) {
             try {
                 const typedarray = new Uint8Array(event.target.result);
                 const pdf = await pdfjsLib.getDocument(typedarray).promise;
                 let fullText = '';
                 let blocks = [];
-                
+
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
                     const textContent = await page.getTextContent();
-                    
+
                     let currentBlock = "";
                     let lastY = -1;
-                    
+
                     textContent.items.forEach(item => {
-                        // Salto en Y indica nuevo párrafo/línea
                         if (lastY !== -1 && Math.abs(lastY - item.transform[5]) > 15) {
                             blocks.push(currentBlock.trim());
                             currentBlock = "";
@@ -129,16 +118,15 @@ async function extractTextFromPDF(file) {
                         lastY = item.transform[5];
                     });
                     if (currentBlock.trim()) blocks.push(currentBlock.trim());
-                    
+
                     fullText += textContent.items.map(item => item.str).join(' ') + '\n';
                 }
-                
-                // Regla ATS: Párrafos demasiado densos (> 100 palabras)
+
                 let isDense = false;
                 blocks.forEach(b => {
                     if (b.split(/\s+/).length > 100) isDense = true;
                 });
-                
+
                 resolve({ fullText, paragraphs: blocks.filter(b => b.length > 20), isDense });
             } catch (error) {
                 reject(error);
@@ -155,7 +143,6 @@ function normalizeWithSynonyms(text) {
         const regex = new RegExp(`\\b${key}\\b`, 'g');
         lower = lower.replace(regex, val);
     }
-    // FASE 6: Convertir bigramas conocidos en un solo token temporal uniendo con guion bajo
     knownConcepts.forEach(concept => {
         const regex = new RegExp(`\\b${concept}\\b`, 'g');
         lower = lower.replace(regex, concept.replace(/ /g, '_'));
@@ -175,7 +162,7 @@ function getTopKeywords(text) {
     const wordCounts = {};
 
     words.forEach(word => {
-        const checkWord = word.replace(/_/g, ' '); 
+        const checkWord = word.replace(/_/g, ' ');
         if (word.length >= 3 && !stopWords.has(checkWord)) {
             wordCounts[word] = (wordCounts[word] || 0) + 1;
         }
@@ -189,7 +176,7 @@ function getTopKeywords(text) {
 
 analyzeBtn.addEventListener('click', async () => {
     const jobDescription = jobDescriptionInput.value.trim();
-    
+
     if (!jobDescription || !cvFile) {
         alert('Falta rellenar la oferta o subir el CV.');
         return;
@@ -207,19 +194,18 @@ analyzeBtn.addEventListener('click', async () => {
 
     try {
         const { fullText, paragraphs, isDense } = await extractTextFromPDF(cvFile);
-        
+
         if (isDense) atsWarningBox.classList.remove('hidden');
 
         const topKeywords = getTopKeywords(jobDescription);
-        
-        // 1. Motor Clásico (Fuse.js)
+
         const cvWords = tokenizeText(normalizeWithSynonyms(fullText));
         const uniqueCvWords = Array.from(new Set(cvWords)).map(word => ({ word }));
         const fuse = new Fuse(uniqueCvWords, { keys: ['word'], threshold: 0.2 });
-        
+
         const foundTokens = [];
         const missingTokens = [];
-        
+
         topKeywords.forEach(kw => {
             if (fuse.search(kw).length > 0) {
                 foundTokens.push({ keyword: kw, method: 'Match Directo', context: 'Coincidencia literal detectada' });
@@ -228,7 +214,6 @@ analyzeBtn.addEventListener('click', async () => {
             }
         });
 
-        // 2. FASE 5: Motor Semántico (Transformers.js Embeddings)
         if (missingTokens.length > 0) {
             const id = Date.now();
             const aiPromise = new Promise((resolve) => {
@@ -240,36 +225,34 @@ analyzeBtn.addEventListener('click', async () => {
                 };
                 aiWorker.addEventListener('message', handler);
             });
-            
-            // Enviamos los faltantes y los párrafos completos (para tener contexto semántico real)
-            aiWorker.postMessage({ 
-                action: 'analyze_semantics', 
-                payload: { keywords: missingTokens, cvParagraphs: paragraphs }, 
-                id 
+
+            aiWorker.postMessage({
+                action: 'analyze_semantics',
+                payload: { keywords: missingTokens, cvParagraphs: paragraphs },
+                id
             });
-            
+
             const semanticResults = await aiPromise;
-            
+
             const finalMissing = [];
             for (const kw of missingTokens) {
                 const res = semanticResults[kw];
                 if (res && res.isSemanticMatch) {
-                    foundTokens.push({ 
-                        keyword: kw, 
-                        method: `Match Semántico IA (${Math.round(res.score*100)}%)`, 
-                        context: `Detectado concepto similar en: "${res.bestParagraph.substring(0, 80)}..."` 
+                    foundTokens.push({
+                        keyword: kw,
+                        method: `Match Semántico IA (${Math.round(res.score * 100)}%)`,
+                        context: `Detectado concepto similar en: "${res.bestParagraph.substring(0, 80)}..."`
                     });
                 } else {
                     finalMissing.push(kw);
                 }
             }
-            
+
             currentAnalysis.found = foundTokens;
             currentAnalysis.missing = finalMissing;
-            
+
             updateUI(foundTokens, finalMissing, topKeywords.length);
-            
-            // FASE 7: Sugerencia de Redacción IA (Generativa) para los faltantes
+
             finalMissing.forEach(kw => {
                 const reqId = Date.now() + Math.random();
                 const sugHandler = (e) => {
@@ -281,7 +264,7 @@ analyzeBtn.addEventListener('click', async () => {
                 aiWorker.addEventListener('message', sugHandler);
                 aiWorker.postMessage({ action: 'generate_suggestion', payload: { keyword: kw }, id: reqId });
             });
-            
+
         } else {
             currentAnalysis.found = foundTokens;
             currentAnalysis.missing = [];
@@ -335,7 +318,7 @@ function updateUI(found, missing, total) {
     currentAnalysis.score = percentage;
     scoreText.textContent = `${percentage}%`;
     const dashArray = `${percentage}, 100`;
-    
+
     scoreCircle.classList.remove('text-red-500', 'text-yellow-500', 'text-green-500');
     if (percentage < 40) scoreCircle.classList.add('text-red-500');
     else if (percentage < 70) scoreCircle.classList.add('text-yellow-500');
@@ -344,11 +327,10 @@ function updateUI(found, missing, total) {
     resultsSection.classList.remove('hidden');
     void resultsSection.offsetWidth;
     resultsSection.classList.remove('opacity-0');
-    
+
     setTimeout(() => { scoreCircle.setAttribute('stroke-dasharray', dashArray); }, 50);
 }
 
-// Inyectar sugerencia dinámica generada por IA
 function injectSuggestionTooltip(keyword, suggestionText) {
     const badge = document.getElementById(`badge-${keyword}`);
     if (badge) {
@@ -361,22 +343,21 @@ function injectSuggestionTooltip(keyword, suggestionText) {
     }
 }
 
-// FASE 8: Reporte jsPDF
 exportPdfBtn.addEventListener('click', () => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
     doc.text("Reporte de Optimizacion CV (AI)", 20, 20);
-    
+
     doc.setFontSize(14);
     doc.text(`Match Score: ${currentAnalysis.score}%`, 20, 30);
-    
+
     doc.setFontSize(12);
     doc.setTextColor(0, 128, 0);
     doc.text("Keywords Validadas:", 20, 45);
-    
+
     doc.setFont("helvetica", "normal");
     doc.setTextColor(0, 0, 0);
     let y = 55;
@@ -384,12 +365,12 @@ exportPdfBtn.addEventListener('click', () => {
         doc.text(`- ${item.keyword.replace(/_/g, ' ')} (${item.method.split(' ')[0]})`, 25, y);
         y += 7;
     });
-    
+
     y += 10;
     doc.setFont("helvetica", "bold");
     doc.setTextColor(200, 0, 0);
     doc.text("Keywords Ausentes (Oportunidades):", 20, y);
-    
+
     doc.setFont("helvetica", "normal");
     doc.setTextColor(0, 0, 0);
     y += 10;
@@ -401,6 +382,6 @@ exportPdfBtn.addEventListener('click', () => {
             y = 20;
         }
     });
-    
+
     doc.save("Reporte_Optimizacion_CV.pdf");
 });
