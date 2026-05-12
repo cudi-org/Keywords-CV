@@ -1,0 +1,19 @@
+{
+  "js": "javascript",
+  "ts": "typescript",
+  "aws": "amazon web services",
+  "gcp": "google cloud platform",
+  "ml": "machine learning",
+  "ai": "inteligencia artificial",
+  "ia": "inteligencia artificial",
+  "rrhh": "recursos humanos",
+  "k8s": "kubernetes",
+  "sql": "sql server",
+  "ui": "user interface",
+  "ux": "user experience",
+  "seo": "search engine optimization",
+  "api": "application programming interface",
+  "html": "hypertext markup language",
+  "css": "cascading style sheets",
+  "qa": "quality assurance"
+}
