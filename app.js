@@ -1,4 +1,4 @@
-const stopWords = new Set([
+const stopWordsEs = new Set([
     "a", "ante", "bajo", "cabe", "con", "contra", "de", "desde", "durante", "en", "entre", "hacia", "hasta", "mediante", "para", "por", "según", "segun", "sin", "so", "sobre", "tras", "versus", "vía", "via",
     "el", "la", "los", "las", "un", "una", "unos", "unas", "al", "del", "lo", "y", "e", "o", "u", "ni", "que", "como", "mas", "pero", "sino", "porque", "aunque", "si",
     "su", "sus", "tu", "tus", "mi", "mis", "nuestro", "nuestra", "vuestro", "vuestra", "se", "me", "nos", "os", "te",
@@ -10,6 +10,19 @@ const stopWords = new Set([
     "competitivo", "ganas", "aprender", "excelente", "ambiente", "crecimiento", "oportunidad", "unete", "únete", "estabilidad", "laboral"
 ]);
 
+const stopWordsEn = new Set([
+    "the", "and", "to", "with", "you", "our", "in", "of", "for", "is", "on", "that", "by", "this", "it", "are", "be", "as", "at", "from", "or", "an", "your",
+    "experience", "skills", "team", "working", "knowledge", "role", "requirements", "join", "opportunity", "remote", "responsibilities", "environment",
+    "we", "us", "company", "job", "work", "looking", "seeking", "candidate", "candidates", "years", "position", "preferred", "required", "plus", "must", "have", "good", "strong", "excellent", "ability", "able"
+]);
+
+function detectLanguage(text) {
+    const lower = text.toLowerCase();
+    const esCount = (lower.match(/\b(de|en|para|el|la)\b/g) || []).length;
+    const enCount = (lower.match(/\b(of|in|for|the)\b/g) || []).length;
+    return enCount > esCount ? 'en' : 'es';
+}
+
 const knownConcepts = [
     "machine learning", "recursos humanos", "sql server", "amazon web services",
     "google cloud platform", "inteligencia artificial", "user experience", "user interface",
@@ -19,13 +32,19 @@ const knownConcepts = [
 ];
 
 let techSynonyms = {};
+let techSkills = new Set();
 let aiReady = false;
 let currentAnalysis = { found: [], missing: [], score: 0 };
 
 fetch('tech-synonyms.json')
     .then(res => res.json())
     .then(data => { techSynonyms = data; })
-    .catch(err => console.error("Error loading synonyms", err));
+    .catch(() => {});
+
+fetch('tech-skills.json')
+    .then(res => res.json())
+    .then(data => { techSkills = new Set(data.map(s => s.toLowerCase())); })
+    .catch(() => {});
 
 const darkModeBtn = document.getElementById('darkModeBtn');
 const htmlEl = document.documentElement;
@@ -150,28 +169,69 @@ function normalizeWithSynonyms(text) {
     return lower;
 }
 
+function basicStemmer(word) {
+    if (word.length <= 4) return word;
+    let stem = word;
+    if (stem.endsWith('ing')) stem = stem.replace(/ing$/, '');
+    else if (stem.endsWith('ed')) stem = stem.replace(/ed$/, '');
+    else if (stem.endsWith('ies')) stem = stem.replace(/ies$/, 'y');
+    else if (stem.endsWith('s') && !stem.endsWith('ss')) stem = stem.replace(/s$/, '');
+    return stem;
+}
+
 function tokenizeText(text) {
     const normalizedText = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    const cleanText = normalizedText.replace(/[^\w\s_]/g, ' '); // Permite _ para bigramas
-    return cleanText.split(/\s+/).filter(word => word.length > 0);
+    const cleanText = normalizedText.replace(/[^\w\s_\-\/\+#]/g, ' ');
+    return cleanText.split(/\s+/)
+        .map(w => w.replace(/^[-\/\+#]+|[-\/]+$/g, ''))
+        .filter(word => word.length > 0);
 }
 
 function getTopKeywords(text) {
-    const normText = normalizeWithSynonyms(text);
-    const words = tokenizeText(normText);
-    const wordCounts = {};
+    const lang = detectLanguage(text);
+    const activeStopWords = lang === 'en' ? stopWordsEn : stopWordsEs;
 
-    words.forEach(word => {
-        const checkWord = word.replace(/_/g, ' ');
-        if (word.length >= 3 && !stopWords.has(checkWord)) {
-            wordCounts[word] = (wordCounts[word] || 0) + 1;
+    const originalTokens = text.split(/\s+/);
+    const uppercaseSet = new Set();
+    originalTokens.forEach(token => {
+        const cleanToken = token.replace(/[^\w\s_\-\/\+#]/g, '');
+        if (cleanToken.length >= 2 && cleanToken === cleanToken.toUpperCase() && /[A-Z]/.test(cleanToken)) {
+            uppercaseSet.add(cleanToken.toLowerCase());
         }
     });
 
-    return Object.entries(wordCounts)
-        .sort((a, b) => b[1] - a[1])
+    const normText = normalizeWithSynonyms(text);
+    const words = tokenizeText(normText);
+    const stemCounts = {};
+    const stemReps = {};
+
+    words.forEach(word => {
+        const checkWord = word.replace(/_/g, ' ');
+        if (word.length >= 2 && !activeStopWords.has(checkWord)) {
+            const isUpper = uppercaseSet.has(word);
+            const points = isUpper ? 2 : 1;
+            const stem = basicStemmer(word);
+            
+            stemCounts[stem] = (stemCounts[stem] || 0) + points;
+            
+            if (!stemReps[stem] || word.length < stemReps[stem].length) {
+                stemReps[stem] = word;
+            }
+        }
+    });
+
+    return Object.entries(stemCounts)
+        .sort((a, b) => {
+            const repA = stemReps[a[0]];
+            const repB = stemReps[b[0]];
+            const aIsSkill = techSkills.has(repA) || techSkills.has(a[0]);
+            const bIsSkill = techSkills.has(repB) || techSkills.has(b[0]);
+            if (aIsSkill && !bIsSkill) return -1;
+            if (!aIsSkill && bIsSkill) return 1;
+            return b[1] - a[1];
+        })
         .slice(0, 15)
-        .map(entry => entry[0]);
+        .map(entry => stemReps[entry[0]]);
 }
 
 analyzeBtn.addEventListener('click', async () => {
@@ -200,14 +260,19 @@ analyzeBtn.addEventListener('click', async () => {
         const topKeywords = getTopKeywords(jobDescription);
 
         const cvWords = tokenizeText(normalizeWithSynonyms(fullText));
-        const uniqueCvWords = Array.from(new Set(cvWords)).map(word => ({ word }));
-        const fuse = new Fuse(uniqueCvWords, { keys: ['word'], threshold: 0.2 });
+        const uniqueCvWords = Array.from(new Set(cvWords)).map(word => ({ 
+            word: word,
+            stem: basicStemmer(word)
+        }));
+        const fuse = new Fuse(uniqueCvWords, { keys: ['word', 'stem'], threshold: 0.2 });
 
         const foundTokens = [];
         const missingTokens = [];
 
         topKeywords.forEach(kw => {
-            if (fuse.search(kw).length > 0) {
+            const kwStem = basicStemmer(kw);
+            const exactMatch = uniqueCvWords.find(c => c.stem === kwStem);
+            if (exactMatch || fuse.search(kw).length > 0) {
                 foundTokens.push({ keyword: kw, method: 'Match Directo', context: 'Coincidencia literal detectada' });
             } else {
                 missingTokens.push(kw);
@@ -251,24 +316,27 @@ analyzeBtn.addEventListener('click', async () => {
             currentAnalysis.found = foundTokens;
             currentAnalysis.missing = finalMissing;
 
-            updateUI(foundTokens, finalMissing, topKeywords.length);
+            updateUI(foundTokens, finalMissing, topKeywords.length, isDense);
 
             finalMissing.forEach(kw => {
-                const reqId = Date.now() + Math.random();
-                const sugHandler = (e) => {
-                    if (e.data.type === 'suggestion_result' && e.data.id === reqId) {
-                        aiWorker.removeEventListener('message', sugHandler);
-                        injectSuggestionTooltip(kw, e.data.text);
-                    }
-                };
-                aiWorker.addEventListener('message', sugHandler);
-                aiWorker.postMessage({ action: 'generate_suggestion', payload: { keyword: kw }, id: reqId });
+                const isHardSkill = techSkills.has(basicStemmer(kw)) || techSkills.has(kw);
+                if (!isHardSkill) {
+                    const reqId = Date.now() + Math.random();
+                    const sugHandler = (e) => {
+                        if (e.data.type === 'suggestion_result' && e.data.id === reqId) {
+                            aiWorker.removeEventListener('message', sugHandler);
+                            injectSuggestionTooltip(kw, e.data.text);
+                        }
+                    };
+                    aiWorker.addEventListener('message', sugHandler);
+                    aiWorker.postMessage({ action: 'generate_suggestion', payload: { keyword: kw }, id: reqId });
+                }
             });
 
         } else {
             currentAnalysis.found = foundTokens;
             currentAnalysis.missing = [];
-            updateUI(foundTokens, [], topKeywords.length);
+            updateUI(foundTokens, [], topKeywords.length, isDense);
         }
 
     } catch (error) {
@@ -281,11 +349,27 @@ analyzeBtn.addEventListener('click', async () => {
     }
 });
 
-function updateUI(found, missing, total) {
+function updateUI(found, missing, total, isDense) {
     foundKeywordsDiv.innerHTML = '';
     missingKeywordsDiv.innerHTML = '';
 
+    let hardSkillsFound = 0;
+    let softSkillsFound = 0;
+    let hardSkillsTotal = 0;
+    let softSkillsTotal = 0;
+
+    const allKeywords = [...found.map(f => f.keyword), ...missing];
+    allKeywords.forEach(kw => {
+        const isHardSkill = techSkills.has(basicStemmer(kw)) || techSkills.has(kw);
+        if (isHardSkill) hardSkillsTotal++;
+        else softSkillsTotal++;
+    });
+
     found.forEach(item => {
+        const isHardSkill = techSkills.has(basicStemmer(item.keyword)) || techSkills.has(item.keyword);
+        if (isHardSkill) hardSkillsFound++;
+        else softSkillsFound++;
+
         const span = document.createElement('span');
         span.className = 'keyword-badge keyword-found group relative';
         span.innerHTML = `
@@ -300,24 +384,51 @@ function updateUI(found, missing, total) {
     });
 
     missing.forEach(kw => {
+        const isHardSkill = techSkills.has(basicStemmer(kw)) || techSkills.has(kw);
         const span = document.createElement('span');
         span.className = 'keyword-badge keyword-missing group relative';
         span.id = `badge-${kw}`;
-        span.innerHTML = `
-            ${kw.replace(/_/g, ' ')}
-            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-10 tooltip-content">
-                <p class="font-bold mb-1 text-red-400">Generando sugerencia IA...</p>
-                <div class="animate-pulse flex space-x-2 mt-2"><div class="h-2 bg-gray-600 rounded w-full"></div></div>
-                <div class="absolute w-3 h-3 bg-gray-900 transform rotate-45 -bottom-1.5 left-1/2 -translate-x-1/2"></div>
-            </div>
-        `;
+        
+        if (isHardSkill) {
+            span.innerHTML = `
+                <a href="https://www.youtube.com/results?search_query=learn+${kw}" target="_blank" class="hover:underline flex items-center gap-1 text-red-700 dark:text-red-300">
+                    ${kw.replace(/_/g, ' ')}
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-10 tooltip-content">
+                    <p class="font-bold mb-1 text-red-400">Skill Técnica Faltante</p>
+                    <p class="text-gray-300">Haz clic para buscar recursos y aprender sobre esta herramienta.</p>
+                    <div class="absolute w-3 h-3 bg-gray-900 transform rotate-45 -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                </div>
+            `;
+        } else {
+            span.innerHTML = `
+                ${kw.replace(/_/g, ' ')}
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-10 tooltip-content">
+                    <p class="font-bold mb-1 text-red-400">Generando sugerencia IA...</p>
+                    <div class="animate-pulse flex space-x-2 mt-2"><div class="h-2 bg-gray-600 rounded w-full"></div></div>
+                    <div class="absolute w-3 h-3 bg-gray-900 transform rotate-45 -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                </div>
+            `;
+        }
         missingKeywordsDiv.appendChild(span);
     });
 
     const percentage = Math.round((found.length / total) * 100);
+    const hardPct = hardSkillsTotal > 0 ? Math.round((hardSkillsFound / hardSkillsTotal) * 100) : 100;
+    const softPct = softSkillsTotal > 0 ? Math.round((softSkillsFound / softSkillsTotal) * 100) : 100;
+    const atsPct = isDense ? 50 : 100;
+
     currentAnalysis.score = percentage;
     scoreText.textContent = `${percentage}%`;
     const dashArray = `${percentage}, 100`;
+
+    document.getElementById('hardSkillsText').textContent = `${hardPct}%`;
+    document.getElementById('hardSkillsBar').style.width = `${hardPct}%`;
+    document.getElementById('softSkillsText').textContent = `${softPct}%`;
+    document.getElementById('softSkillsBar').style.width = `${softPct}%`;
+    document.getElementById('atsFormatText').textContent = `${atsPct}%`;
+    document.getElementById('atsFormatBar').style.width = `${atsPct}%`;
 
     scoreCircle.classList.remove('text-red-500', 'text-yellow-500', 'text-green-500');
     if (percentage < 40) scoreCircle.classList.add('text-red-500');
@@ -329,6 +440,43 @@ function updateUI(found, missing, total) {
     resultsSection.classList.remove('opacity-0');
 
     setTimeout(() => { scoreCircle.setAttribute('stroke-dasharray', dashArray); }, 50);
+}
+
+const generateCoverLetterBtn = document.getElementById('generateCoverLetterBtn');
+const coverLetterResult = document.getElementById('coverLetterResult');
+const coverLetterText = document.getElementById('coverLetterText');
+
+if (generateCoverLetterBtn) {
+    generateCoverLetterBtn.addEventListener('click', () => {
+        if (currentAnalysis.found.length === 0) return;
+        
+        generateCoverLetterBtn.disabled = true;
+        generateCoverLetterBtn.innerHTML = `
+            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg> Redactando...
+        `;
+        coverLetterResult.classList.remove('hidden');
+        coverLetterText.innerHTML = '<span class="animate-pulse">Generando borrador con IA...</span>';
+
+        const keywordsStr = currentAnalysis.found.map(f => f.keyword).join(', ');
+        const reqId = Date.now();
+        
+        const handler = (e) => {
+            if (e.data.type === 'cover_letter_result' && e.data.id === reqId) {
+                aiWorker.removeEventListener('message', handler);
+                coverLetterText.textContent = e.data.text;
+                generateCoverLetterBtn.disabled = false;
+                generateCoverLetterBtn.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    Regenerar Carta de Presentación
+                `;
+            }
+        };
+        aiWorker.addEventListener('message', handler);
+        aiWorker.postMessage({ action: 'generate_cover_letter', payload: { keywords: keywordsStr }, id: reqId });
+    });
 }
 
 function injectSuggestionTooltip(keyword, suggestionText) {

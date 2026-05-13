@@ -54,7 +54,7 @@ self.onmessage = async (event) => {
                     }
                 }
 
-                results[kw] = { score: bestScore, bestParagraph: bestMatch, isSemanticMatch: bestScore > 0.45 };
+                results[kw] = { score: bestScore, bestParagraph: bestMatch, isSemanticMatch: bestScore > 0.70 };
             }
 
             cvEmbeddings.length = 0;
@@ -64,9 +64,15 @@ self.onmessage = async (event) => {
         else if (action === 'generate_suggestion') {
             const { keyword } = payload;
             const kwClean = keyword.replace(/_/g, ' ');
-            const prompt = `Write a short professional resume bullet point containing the skill: ${kwClean}`;
+            const prompt = `Write a professional resume bullet point for a Junior SOC Analyst demonstrating experience with: ${kwClean}. Keep it under 20 words.`;
             const output = await generator(prompt, { max_new_tokens: 30 });
             self.postMessage({ type: 'suggestion_result', id, keyword, text: output[0].generated_text });
+        }
+        else if (action === 'generate_cover_letter') {
+            const { keywords } = payload;
+            const prompt = `Write a short professional cover letter expressing interest in a position. Highlight your strong experience with the following skills: ${keywords}. Keep it concise and under 100 words.`;
+            const output = await generator(prompt, { max_new_tokens: 150 });
+            self.postMessage({ type: 'cover_letter_result', id, text: output[0].generated_text });
         }
     } catch (error) {
         self.postMessage({ type: 'error', error: error.message });
