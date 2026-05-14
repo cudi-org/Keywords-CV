@@ -9,5 +9,7 @@
   "graphql", "grpc", "soap", "microservices", "serverless",
   "splunk", "qradar", "arcsight", "wireshark", "nmap", "metasploit", "btl1", "btl1-2", "btl2",
   "machine_learning", "deep_learning", "data_science", "user_experience", "user_interface",
-  "front_end", "back_end", "full_stack", "react_js", "node_js", "vue_js", "angular_js"
+  "front_end", "back_end", "full_stack", "react_js", "node_js", "vue_js", "angular_js",
+  "genesys", "genesys cloud", "genesys cloud cx", "contact center", "soporte", 
+  "monitorización", "monitorizacion", "incidencias", "inglés", "ingles", "b2"
 ]

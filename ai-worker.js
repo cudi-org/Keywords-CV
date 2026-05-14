@@ -70,9 +70,21 @@ self.onmessage = async (event) => {
         }
         else if (action === 'generate_cover_letter') {
             const { keywords } = payload;
-            const prompt = `Write a short professional cover letter expressing interest in a position. Highlight your strong experience with the following skills: ${keywords}. Keep it concise and under 100 words.`;
-            const output = await generator(prompt, { max_new_tokens: 150 });
-            self.postMessage({ type: 'cover_letter_result', id, text: output[0].generated_text });
+            const prompt = `Write a short professional email applying for a job. I have expertise in: ${keywords}. Start with "Dear Hiring Manager," and end with "Best regards."`;
+            
+            const output = await generator(prompt, { 
+                max_new_tokens: 150,
+                temperature: 0.7,
+                repetition_penalty: 1.2
+            });
+
+            let generatedText = output[0].generated_text.trim();
+
+            if (generatedText.length < 20) {
+                generatedText = `Estimado/a Responsable de Selección,\n\nLes escribo para presentar mi candidatura a la oferta de empleo. A lo largo de mi trayectoria, he desarrollado sólidas competencias y experiencia práctica en las siguientes áreas clave requeridas para el puesto: ${keywords.replace(/_/g, ' ')}.\n\nEstoy convencido/a de que mi perfil técnico y mi capacidad para adaptarme rápidamente a nuevos entornos me permitirían aportar valor a su equipo desde el primer día.\n\nQuedo a su entera disposición para concertar una entrevista y detallar cómo mi experiencia se alinea con los objetivos de su empresa.\n\nAtentamente,\n[Tu Nombre]`;
+            }
+
+            self.postMessage({ type: 'cover_letter_result', id, text: generatedText });
         }
     } catch (error) {
         self.postMessage({ type: 'error', error: error.message });

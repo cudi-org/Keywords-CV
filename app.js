@@ -1,13 +1,36 @@
 const stopWordsEs = new Set([
+    // --- Preposiciones y conjunciones básicas ---
     "a", "ante", "bajo", "cabe", "con", "contra", "de", "desde", "durante", "en", "entre", "hacia", "hasta", "mediante", "para", "por", "según", "segun", "sin", "so", "sobre", "tras", "versus", "vía", "via",
     "el", "la", "los", "las", "un", "una", "unos", "unas", "al", "del", "lo", "y", "e", "o", "u", "ni", "que", "como", "mas", "pero", "sino", "porque", "aunque", "si",
+    
+    // --- Pronombres y verbos comunes ---
     "su", "sus", "tu", "tus", "mi", "mis", "nuestro", "nuestra", "vuestro", "vuestra", "se", "me", "nos", "os", "te",
-    "es", "son", "ser", "estar", "fue", "ha", "han", "he", "has", "hemos", "habéis", "han", "soy", "eres", "somos", "sois", "fui", "fuiste", "fuimos", "fueron", "estoy", "estás", "estamos", "estáis", "están",
+    "es", "son", "ser", "estar", "fue", "ha", "han", "he", "has", "hemos", "habéis", "soy", "eres", "somos", "sois", "fui", "fuiste", "fuimos", "fueron", "estoy", "estás", "estamos", "estáis", "están",
     "este", "esta", "estos", "estas", "ese", "esa", "esos", "esas", "aquel", "aquella", "aquellos", "aquellas",
+    
+    // --- Adverbios y otros ---
     "muy", "mucho", "poco", "todo", "toda", "todos", "todas", "nada", "algo", "quien", "quienes", "cual", "cuales", "cuando", "donde", "mientras",
-    "tambien", "también", "ademas", "además", "incluso", "entonces", "luego", "asi", "así", "pues", "ya",
-    "no", "si", "sí", "solo", "solamente", "años", "experiencia", "conocimientos", "valorable", "imprescindible", "requiere", "requisitos", "oferta", "puesto", "empresa", "trabajo", "equipo", "persona", "perfil", "buscamos", "importante", "sector", "cliente", "clientes", "proyecto", "proyectos", "funciones", "tareas", "candidato", "candidata", "profesional", "jornada", "completa", "parcial", "contrato", "indefinido", "temporal", "salario", "remuneración", "beneficios", "desarrollo", "carrera", "incorporación", "inmediata", "ubicación", "lugar", "horario", "lunes", "viernes", "fin", "semana", "meses", "mes", "año", "nivel", "alto", "medio", "bajo", "mínimo", "minimo", "máximo", "maximo", "valora", "imprescindibles",
-    "competitivo", "ganas", "aprender", "excelente", "ambiente", "crecimiento", "oportunidad", "unete", "únete", "estabilidad", "laboral"
+    "tambien", "también", "ademas", "además", "incluso", "entonces", "luego", "asi", "así", "pues", "ya", "no", "si", "sí", "solo", "solamente",
+    
+    // --- Jerga General de RRHH (Lo que ya tenías) ---
+    "años", "experiencia", "conocimientos", "valorable", "imprescindible", "requiere", "requisitos", "oferta", "puesto", "empresa", "trabajo", "equipo", "persona", "perfil", "buscamos", "importante", "sector", "cliente", "clientes", "proyecto", "proyectos", "funciones", "tareas", "candidato", "candidata", "profesional", "jornada", "completa", "parcial", "contrato", "indefinido", "temporal", "salario", "remuneración", "desarrollo", "carrera", "incorporación", "inmediata", "ubicación", "lugar", "horario", "lunes", "viernes", "fin", "semana", "meses", "mes", "año", "nivel", "alto", "medio", "bajo", "mínimo", "minimo", "máximo", "maximo", "valora", "imprescindibles",
+    
+    // --- NUEVO: Filtro de Cultura, Beneficios y "Ruido" de ofertas ---
+    "días", "dias", "vacaciones", "diciembre", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre",
+    "club", "pádel", "running", "eventos", "verano", "navidad", "halloween", "risas", "diversión",
+    "seguro", "médico", "medico", "cheques", "restaurante", "guardería", "guarderia", "beneficios", "flexibles", "ticket", "tickets", "transporte",
+    "compañeros", "ambiente", "inmejorable", "apoyo", "norma", "competitividad", "cabida", "crecimiento", "oportunidad", "unete", "únete", "estabilidad", "laboral", "excelente", "ganas", "aprender",
+    "procesos", "solicitudes", "gestión", "gestion", "actividad", "documentación", "documentacion", "guías", "guias", "políticas", "politicas", "normas", "procedimientos",
+    "igualdad", "oportunidades", "aceptamos", "personas", "calificadas", "raza", "género", "genero", "discapacidad", "religión", "creencia", "orientación", "orientacion", "sexual", "edad",
+    
+    // --- TO-DO 1: Parche "Anti-Fluff" ---
+    "consultoría", "digital", "transformación", "sostenible", "reto", "proponemos", 
+    "disruptivas", "inspiración", "disciplina", "entorno", "humano", "retador", 
+    "excepcional", "diverso", "innovación", "talento", "protagonista", "conciliación", 
+    "híbrido", "laborables", "descanso", "intensiva", "verano", "potencial", 
+    "gratuito", "udemy", "retribución", "vida", "gimnasios", "fisioterapia", 
+    "talleres", "salud", "telemedicina", "compromiso", "promover", "dignidad", 
+    "garantizando", "selección", "promoción", "discriminación", "etnia", "civil"
 ]);
 
 const stopWordsEn = new Set([
@@ -58,6 +81,8 @@ const loadingSpinner = document.getElementById('loadingSpinner');
 const modelLoadingInfo = document.getElementById('modelLoadingInfo');
 const atsWarningBox = document.getElementById('atsWarningBox');
 const exportPdfBtn = document.getElementById('exportPdfBtn');
+const liveCvEditor = document.getElementById('liveCvEditor');
+const downloadOptimizedCvBtn = document.getElementById('downloadOptimizedCvBtn');
 const scoreCircle = document.getElementById('scoreCircle');
 const scoreText = document.getElementById('scoreText');
 const foundKeywordsDiv = document.getElementById('foundKeywords');
@@ -254,6 +279,7 @@ analyzeBtn.addEventListener('click', async () => {
 
     try {
         const { fullText, paragraphs, isDense } = await extractTextFromPDF(cvFile);
+        liveCvEditor.value = fullText;
 
         if (isDense) atsWarningBox.classList.remove('hidden');
 
@@ -485,9 +511,23 @@ function injectSuggestionTooltip(keyword, suggestionText) {
         const tooltip = badge.querySelector('.tooltip-content');
         tooltip.innerHTML = `
             <p class="font-bold mb-1 text-blue-400">💡 Sugerencia IA:</p>
-            <p class="text-gray-200 italic">"${suggestionText}"</p>
+            <p class="text-gray-200 italic mb-2">"${suggestionText}"</p>
+            <button class="insert-btn bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-2 py-1 rounded w-full flex items-center justify-center gap-1 transition-colors">
+                ➕ Insertar en el CV
+            </button>
             <div class="absolute w-3 h-3 bg-gray-900 transform rotate-45 -bottom-1.5 left-1/2 -translate-x-1/2"></div>
         `;
+        const btn = tooltip.querySelector('.insert-btn');
+        if (btn) {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (liveCvEditor) {
+                    liveCvEditor.value += '\n- ' + suggestionText;
+                    liveCvEditor.scrollTop = liveCvEditor.scrollHeight;
+                }
+            });
+        }
     }
 }
 
@@ -532,4 +572,14 @@ exportPdfBtn.addEventListener('click', () => {
     });
 
     doc.save("Reporte_Optimizacion_CV.pdf");
+});
+
+downloadOptimizedCvBtn.addEventListener('click', () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    const splitText = doc.splitTextToSize(liveCvEditor.value, 180);
+    doc.text(splitText, 15, 20);
+    doc.save("Mi_CV_Optimizado_ATS.pdf");
 });

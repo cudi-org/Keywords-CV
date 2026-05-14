@@ -212,6 +212,20 @@
                     </svg>
                     Exportar Reporte de Optimización PDF
                 </button>
+
+                <div class="mt-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full text-left">
+                    <h3 class="text-lg font-bold mb-2 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        Editor ATS en Vivo
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Corrige tu CV aquí mismo. Este formato de texto plano es el favorito de los bots de RRHH.</p>
+                    
+                    <textarea id="liveCvEditor" rows="15" class="w-full p-4 font-mono text-sm border rounded-md bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 outline-none resize-y"></textarea>
+                    
+                    <button id="downloadOptimizedCvBtn" class="mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors w-full">
+                        ⬇️ Descargar CV Optimizado (ATS-Friendly PDF)
+                    </button>
+                </div>
             </div>
 
             <div id="emptyState"
